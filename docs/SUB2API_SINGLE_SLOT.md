@@ -76,10 +76,12 @@ export SINGLE_SLOT_VM_ID=vm-01
 export MAX_CONCURRENCY=2
 export MAX_WAITERS=32
 export QUEUE_TIMEOUT_MS=120000
-export SUB2API_DOCKER_NETWORK=sub2api-deploy_default
+export SUB2API_DOCKER_NETWORK=sub2api-deploy_sub2api-network
 ```
 
-启动前确认 `SUB2API_DOCKER_NETWORK` 是 Sub2API 后端实际加入的内部 Docker 网络。侧车不映射公网端口，只加入该内部网络，并通过 `host.docker.internal` 访问 host-network 模式的 vm2api。
+`sub2api-deploy/docker-compose.yml` 的网络键是 `sub2api-network`；使用默认 Compose 项目名 `sub2api-deploy` 时，实际网络名为 `sub2api-deploy_sub2api-network`。启动前应以 `docker network ls` 或 `docker inspect sub2api` 核对实际网络名，再设置 `SUB2API_DOCKER_NETWORK`。
+
+侧车不映射公网端口，只加入该内部网络，并通过 `host.docker.internal` 访问 host-network 模式的 vm2api。
 
 启动：
 

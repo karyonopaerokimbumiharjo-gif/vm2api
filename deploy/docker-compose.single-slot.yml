@@ -49,4 +49,4 @@ secrets:
 networks:
   sub2api:
     external: true
-    name: ${SUB2API_DOCKER_NETWORK:-sub2api-deploy_default}
+    name: ${SUB2API_DOCKER_NETWORK:-sub2api-deploy_sub2api-network}
