@@ -43,6 +43,9 @@ const UNTRUSTED_FORWARDING = new Set([
   'x-panel-token',
   'x-kin-vm',
   'x-kin-backend',
+  'cookie',
+  'origin',
+  'referer',
 ])
 
 function extractKey(req) {
@@ -86,7 +89,7 @@ function safeResponseHeaders(upstreamHeaders) {
   const headers = {}
   for (const [name, value] of Object.entries(upstreamHeaders || {})) {
     const lower = name.toLowerCase()
-    if (HOP_BY_HOP.has(lower)) continue
+    if (HOP_BY_HOP.has(lower) || lower === 'set-cookie') continue
     if (value !== undefined) headers[lower] = value
   }
   return headers
@@ -148,8 +151,9 @@ export function createGatewayHandler({
 
     if (req.method === 'GET' && url.pathname === '/health') {
       const preflight = getPreflight()
-      return json(res, preflight?.ok === false ? 503 : 200, {
-        status: 'ok',
+      const healthy = preflight?.ok !== false
+      return json(res, healthy ? 200 : 503, {
+        status: healthy ? 'ok' : 'not_ready',
         service: 'vm2api-single-slot-gateway',
         slot_id: config.slotId,
         gate: gate.snapshot(),

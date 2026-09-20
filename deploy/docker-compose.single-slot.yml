@@ -4,14 +4,19 @@ services:
       context: ../single-slot-gateway
     container_name: vm2api-single-slot-gateway
     restart: unless-stopped
-    network_mode: host
+    expose:
+      - "${SINGLE_SLOT_GATEWAY_PORT:-8790}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - sub2api
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777
     environment:
       HOST: 0.0.0.0
       PORT: ${SINGLE_SLOT_GATEWAY_PORT:-8790}
-      VM2API_BASE_URL: ${VM2API_BASE_URL:-http://127.0.0.1:8787}
+      VM2API_BASE_URL: ${VM2API_BASE_URL:-http://host.docker.internal:8787}
       SINGLE_SLOT_VM_ID: ${SINGLE_SLOT_VM_ID:?set SINGLE_SLOT_VM_ID}
       VM2API_PROJECT_ROOT: /vm2api
       PREFLIGHT_REQUIRED: "1"
@@ -29,7 +34,7 @@ services:
       - single_slot_inbound_key
       - vm2api_managed_key
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8790/ready"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${PORT}/ready >/dev/null"]
       interval: 15s
       timeout: 5s
       retries: 4
@@ -40,3 +45,8 @@ secrets:
     file: ${SINGLE_SLOT_INBOUND_KEY_FILE:-./secrets/single-slot-inbound-key.txt}
   vm2api_managed_key:
     file: ${VM2API_MANAGED_KEY_FILE:-./secrets/vm2api-managed-key.txt}
+
+networks:
+  sub2api:
+    external: true
+    name: ${SUB2API_DOCKER_NETWORK:-sub2api-deploy_default}

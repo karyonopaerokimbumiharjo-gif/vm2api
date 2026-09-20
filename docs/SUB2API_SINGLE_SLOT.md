@@ -32,7 +32,7 @@ Single-Slot Gateway 的做法是：
 2. 侧车以只读方式检查 `active.json`、VM JSON、代理绑定和并发值；
 3. 每次推理前重新检查，发现第二个可调度 slot 或配置漂移立即返回 `503 single_slot_preflight_failed`；
 4. 侧车只持有 `sk-vm-*` 协议密钥，不能访问管理面板；
-5. 不向 vm2api 发送 `x-kin-vm`、`x-kin-backend` 或下游转发 IP 头。
+5. 不向 vm2api 发送 `x-kin-vm`、`x-kin-backend`、Cookie 或下游转发 IP 头。
 
 因此，账号额度、代理同步、凭证状态和 vm2api 自身调度门禁仍正常生效。
 
@@ -76,14 +76,17 @@ export SINGLE_SLOT_VM_ID=vm-01
 export MAX_CONCURRENCY=2
 export MAX_WAITERS=32
 export QUEUE_TIMEOUT_MS=120000
+export SUB2API_DOCKER_NETWORK=sub2api-deploy_default
 ```
+
+启动前确认 `SUB2API_DOCKER_NETWORK` 是 Sub2API 后端实际加入的内部 Docker 网络。侧车不映射公网端口，只加入该内部网络，并通过 `host.docker.internal` 访问 host-network 模式的 vm2api。
 
 启动：
 
 ```bash
 docker compose -f deploy/docker-compose.single-slot.yml up -d --build
 docker compose -f deploy/docker-compose.single-slot.yml ps
-curl -sS http://127.0.0.1:8790/ready
+docker exec vm2api-single-slot-gateway wget -qO- http://127.0.0.1:8790/ready
 ```
 
 `/ready` 必须同时满足：
@@ -103,7 +106,7 @@ Sub2API 已支持 `upstream` 类型，即通过 Base URL + API Key 连接另一�
 ```text
 平台：Anthropic
 账号类型：Upstream
-Base URL：http://host.docker.internal:8790
+Base URL：http://vm2api-single-slot-gateway:8790
 API Key：single-slot-inbound-key.txt 的内容
 API 协议：anthropic
 账号并发：2
@@ -114,7 +117,7 @@ API 协议：anthropic
 ```text
 平台：OpenAI
 账号类型：Upstream
-Base URL：http://host.docker.internal:8790
+Base URL：http://vm2api-single-slot-gateway:8790
 API Key：single-slot-inbound-key.txt 的内容
 API 协议：responses
 账号并发：2
