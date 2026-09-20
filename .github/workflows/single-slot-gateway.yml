@@ -1,0 +1,35 @@
+name: single-slot-gateway
+
+on:
+  pull_request:
+    paths:
+      - "single-slot-gateway/**"
+      - "deploy/docker-compose.single-slot.yml"
+      - "docs/SUB2API_SINGLE_SLOT.md"
+      - ".github/workflows/single-slot-gateway.yml"
+  push:
+    branches:
+      - main
+      - "feat/sub2api-single-slot-gateway"
+    paths:
+      - "single-slot-gateway/**"
+      - "deploy/docker-compose.single-slot.yml"
+      - "docs/SUB2API_SINGLE_SLOT.md"
+      - ".github/workflows/single-slot-gateway.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: single-slot-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: docker build -t vm2api-single-slot-gateway:test .

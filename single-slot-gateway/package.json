@@ -1,0 +1,15 @@
+{
+  "name": "@vm2api/single-slot-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fail-closed single-slot concurrency gateway for Sub2API -> vm2api deployments",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "preflight": "node src/preflight-cli.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
