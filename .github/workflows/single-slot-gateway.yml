@@ -1,0 +1,44 @@
+name: single-slot-gateway
+
+on:
+  pull_request:
+    paths:
+      - "single-slot-gateway/**"
+      - "deploy/docker-compose.single-slot.yml"
+      - "docs/SUB2API_SINGLE_SLOT.md"
+      - ".github/workflows/single-slot-gateway.yml"
+  push:
+    branches:
+      - main
+      - "feat/sub2api-single-slot-gateway"
+    paths:
+      - "single-slot-gateway/**"
+      - "deploy/docker-compose.single-slot.yml"
+      - "docs/SUB2API_SINGLE_SLOT.md"
+      - ".github/workflows/single-slot-gateway.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: single-slot-gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: docker build -t vm2api-single-slot-gateway:test .
+      - name: validate compose
+        run: |
+          mkdir -p ../deploy/secrets /tmp/vm2api
+          printf 'inbound-test-key\n' > ../deploy/secrets/single-slot-inbound-key.txt
+          printf 'sk-vm-test-key\n' > ../deploy/secrets/vm2api-managed-key.txt
+          VM2API_PROJECT_ROOT=/tmp/vm2api \
+          SINGLE_SLOT_VM_ID=vm-01 \
+          SUB2API_DOCKER_NETWORK=sub2api-test \
+          docker compose -f ../deploy/docker-compose.single-slot.yml config >/dev/null

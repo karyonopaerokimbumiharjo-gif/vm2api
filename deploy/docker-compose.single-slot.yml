@@ -1,0 +1,52 @@
+services:
+  vm2api-single-slot-gateway:
+    build:
+      context: ../single-slot-gateway
+    container_name: vm2api-single-slot-gateway
+    restart: unless-stopped
+    expose:
+      - "${SINGLE_SLOT_GATEWAY_PORT:-8790}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - sub2api
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    environment:
+      HOST: 0.0.0.0
+      PORT: ${SINGLE_SLOT_GATEWAY_PORT:-8790}
+      VM2API_BASE_URL: ${VM2API_BASE_URL:-http://host.docker.internal:8787}
+      SINGLE_SLOT_VM_ID: ${SINGLE_SLOT_VM_ID:?set SINGLE_SLOT_VM_ID}
+      VM2API_PROJECT_ROOT: /vm2api
+      PREFLIGHT_REQUIRED: "1"
+      ALLOW_LOCAL_EGRESS: ${ALLOW_LOCAL_EGRESS:-0}
+      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-2}
+      MAX_WAITERS: ${MAX_WAITERS:-32}
+      QUEUE_TIMEOUT_MS: ${QUEUE_TIMEOUT_MS:-120000}
+      UPSTREAM_IDLE_TIMEOUT_MS: ${UPSTREAM_IDLE_TIMEOUT_MS:-180000}
+      TRUST_INBOUND_SESSION: "1"
+      INBOUND_API_KEY_FILE: /run/secrets/single_slot_inbound_key
+      VM2API_UPSTREAM_KEY_FILE: /run/secrets/vm2api_managed_key
+    volumes:
+      - ${VM2API_PROJECT_ROOT:?set VM2API_PROJECT_ROOT}:/vm2api:ro
+    secrets:
+      - single_slot_inbound_key
+      - vm2api_managed_key
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${PORT}/ready >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 15s
+
+secrets:
+  single_slot_inbound_key:
+    file: ${SINGLE_SLOT_INBOUND_KEY_FILE:-./secrets/single-slot-inbound-key.txt}
+  vm2api_managed_key:
+    file: ${VM2API_MANAGED_KEY_FILE:-./secrets/vm2api-managed-key.txt}
+
+networks:
+  sub2api:
+    external: true
+    name: ${SUB2API_DOCKER_NETWORK:-sub2api-deploy_sub2api-network}
